@@ -1,10 +1,23 @@
+import gleam/dynamic/decode
 import gleam/int
+import gleam/json
 import gleam/list
+import gleam/result
 import lustre
 import lustre/attribute
 import lustre/element
 import lustre/element/html
 import lustre/event
+
+@external(javascript, "./heroquest_stats_tracker.ffi.mjs", "get_localstorage")
+fn get_localstorage(_key: String) -> Result(decode.Dynamic, Nil) {
+  Error(Nil)
+}
+
+@external(javascript, "./heroquest_stats_tracker.ffi.mjs", "set_localstorage")
+fn set_localstorage(_key: String, _json: String) -> Nil {
+  Nil
+}
 
 pub fn main() -> Nil {
   let app = lustre.simple(init:, update:, view:)
@@ -23,6 +36,47 @@ type Model {
     defend_dice: Int,
     gold: Int,
   )
+}
+
+fn model_to_json(model: Model) -> String {
+  json.object([
+    #("name", json.string(model.name)),
+    #("character", json.string(character_to_string(model.character))),
+    #("body", json.int(model.body)),
+    #("mind", json.int(model.mind)),
+    #("attack_dice", json.int(model.attack_dice)),
+    #("defend_dice", json.int(model.defend_dice)),
+    #("gold", json.int(model.gold)),
+  ])
+  |> json.to_string
+}
+
+fn model_from_json(json: decode.Dynamic) -> Result(Model, Nil) {
+  let model_decoder = {
+    use name <- decode.field("name", decode.string)
+    use character <- decode.field("character", decode.string)
+    use body <- decode.field("body", decode.int)
+    use mind <- decode.field("mind", decode.int)
+    use attack_dice <- decode.field("attack_dice", decode.int)
+    use defend_dice <- decode.field("defend_dice", decode.int)
+    use gold <- decode.field("gold", decode.int)
+
+    // let assert Ok(character) = character_from_string(character)
+    let character = character_from_string(character) |> result.unwrap(Elf)
+
+    decode.success(Model(
+      name:,
+      character:,
+      body:,
+      mind:,
+      attack_dice:,
+      defend_dice:,
+      gold:,
+    ))
+  }
+
+  decode.run(json, model_decoder)
+  |> result.replace_error(Nil)
 }
 
 type Character {
@@ -52,14 +106,20 @@ fn character_from_string(s: String) -> Result(Character, Nil) {
 }
 
 fn init(_) -> Model {
+  get_localstorage("hero")
+  |> result.try(model_from_json)
+  |> result.unwrap(default_model())
+}
+
+fn default_model() -> Model {
   Model(
     name: "Lucy",
     character: Elf,
-    body: 6,
+    body: 4,
     mind: 8,
     attack_dice: 2,
-    defend_dice: 1,
-    gold: 0,
+    defend_dice: 4,
+    gold: 100,
   )
 }
 
@@ -74,7 +134,7 @@ type Msg {
 }
 
 fn update(model: Model, msg: Msg) -> Model {
-  case msg {
+  let model = case msg {
     UserUpdatedName(name) -> Model(..model, name:)
     UserUpdatedCharacter(character) -> Model(..model, character:)
     UserUpdatedBody(body) -> Model(..model, body:)
@@ -83,6 +143,9 @@ fn update(model: Model, msg: Msg) -> Model {
     UserUpdatedDefendDice(defend_dice) -> Model(..model, defend_dice:)
     UserUpdatedGold(gold) -> Model(..model, gold:)
   }
+  set_localstorage("hero", model_to_json(model))
+
+  model
 }
 
 fn view(model: Model) -> element.Element(Msg) {
