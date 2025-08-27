@@ -86,31 +86,59 @@ fn update(model: Model, msg: Msg) -> Model {
 }
 
 fn view(model: Model) -> element.Element(Msg) {
-  html.div([], [
-    view_name(model.name),
-    view_character(model.character),
-    view_int_stat("Body", model.body, 1, UserUpdatedBody),
-    view_int_stat("Mind", model.mind, 1, UserUpdatedMind),
-    view_int_stat("Attack Dice", model.attack_dice, 1, UserUpdatedAttackDice),
-    view_int_stat("Defend Dice", model.defend_dice, 1, UserUpdatedDefendDice),
-    view_int_stat("Gold", model.gold, 5, UserUpdatedGold),
-  ])
+  html.div(
+    [
+      attribute.class(
+        "max-w-xl mx-auto p-6 bg-white shadow-md rounded space-y-6",
+      ),
+    ],
+    [
+      view_name(model.name),
+      view_character(model.character),
+      html.hr([attribute.class("border-t border-gray-200")]),
+      html.div([attribute.class("grid grid-cols-2 gap-4")], [
+        view_int_stat("Body", model.body, 1, UserUpdatedBody),
+        view_int_stat("Mind", model.mind, 1, UserUpdatedMind),
+        view_int_stat(
+          "Attack Dice",
+          model.attack_dice,
+          1,
+          UserUpdatedAttackDice,
+        ),
+        view_int_stat(
+          "Defend Dice",
+          model.defend_dice,
+          1,
+          UserUpdatedDefendDice,
+        ),
+      ]),
+      html.hr([attribute.class("border-t border-gray-200")]),
+      view_int_stat("Gold", model.gold, 5, UserUpdatedGold),
+    ],
+  )
 }
 
 fn view_name(name: String) -> element.Element(Msg) {
-  html.div([], [
-    html.label([], [html.text("Name: ")]),
+  html.div([attribute.class("flex flex-col")], [
+    html.label([attribute.class("text-md text-gray-700 mb-1")], [
+      html.text("Name"),
+    ]),
     html.input([
       attribute.type_("text"),
       attribute.value(name),
       event.on_input(UserUpdatedName),
+      attribute.class(
+        "border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500",
+      ),
     ]),
   ])
 }
 
 fn view_character(character: Character) -> element.Element(Msg) {
-  html.div([], [
-    html.label([], [html.text("Character: ")]),
+  html.div([attribute.class("flex flex-col")], [
+    html.label([attribute.class("text-md text-gray-700 mb-1")], [
+      html.text("Character"),
+    ]),
     html.select(
       [
         event.on_input(fn(v) {
@@ -119,6 +147,9 @@ fn view_character(character: Character) -> element.Element(Msg) {
             Error(_) -> UserUpdatedCharacter(character)
           }
         }),
+        attribute.class(
+          "border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500",
+        ),
       ],
       [Barbarian, Dwarf, Elf, Wizard]
         |> list.map(fn(c) {
@@ -132,18 +163,39 @@ fn view_character(character: Character) -> element.Element(Msg) {
 }
 
 fn view_int_stat(name: String, value: Int, step: Int, msg: fn(Int) -> Msg) {
-  html.div([], [
-    html.label([], [html.text(name <> ": ")]),
-    html.input([
-      attribute.type_("number"),
-      attribute.value(int.to_string(value)),
-      attribute.step(int.to_string(step)),
-      event.on_input(fn(v) {
-        case int.parse(v) {
-          Ok(v) -> msg(v)
-          Error(_) -> msg(value)
-        }
-      }),
+  html.div([attribute.class("flex flex-col w-full")], [
+    html.label([attribute.class("text-sm font-medium text-gray-700 mb-1")], [
+      html.text(name),
+    ]),
+    html.div([attribute.class("flex items-center space-x-2")], [
+      html.button(
+        [
+          attribute.class("px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"),
+          event.on_click(msg(value - step)),
+        ],
+        [html.text("-")],
+      ),
+      html.input([
+        attribute.class(
+          "flex-grow px-3 py-1 border border-gray-300 rounded w-16 text-center no-spinner",
+        ),
+        attribute.type_("number"),
+        attribute.step(int.to_string(step)),
+        attribute.value(int.to_string(value)),
+        event.on_input(fn(v) {
+          case int.parse(v) {
+            Ok(v) -> msg(v)
+            Error(_) -> msg(value)
+          }
+        }),
+      ]),
+      html.button(
+        [
+          attribute.class("px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"),
+          event.on_click(msg(value + step)),
+        ],
+        [html.text("+")],
+      ),
     ]),
   ])
 }
