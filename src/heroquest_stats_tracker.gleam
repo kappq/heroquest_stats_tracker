@@ -256,7 +256,7 @@ fn view_divider() -> element.Element(Msg) {
 }
 
 fn view_stats_grid(model: Model) -> element.Element(Msg) {
-  html.div([attribute.class("grid grid-cols-2 gap-4")], [
+  html.div([attribute.class("grid grid-cols-1 sm:grid-cols-2 gap-4")], [
     view_int_stat("Body", model.body, 1, UserUpdatedBody),
     view_int_stat("Mind", model.mind, 1, UserUpdatedMind),
     view_int_stat("Attack Dice", model.attack_dice, 1, UserUpdatedAttackDice),
