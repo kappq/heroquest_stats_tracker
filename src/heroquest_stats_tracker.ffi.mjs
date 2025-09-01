@@ -15,3 +15,11 @@ export function get_localstorage(key) {
 export function set_localstorage(key, json) {
   window.localStorage.setItem(key, json);
 }
+
+export function clear_item() {
+  const el = document.getElementById("item");
+
+  if (el === null) return;
+
+  el.value = "";
+}
